@@ -4,13 +4,13 @@
 #include <list>
 #include <queue>
 
-// TODO : intro comment
-
-/*   0 1 2 3
- * 0 0 0 0 0
- * 1 0 0 0 0
- * 2 0 0 0 0
- * 3 0 0 0 0
+/*
+ * #######################################################################################
+ *                                 N-Queens Problem
+ * This program uses a breadth first search implementation to solve the N-Queens problem
+ *
+ * Created by ~ Caleb Howard
+ *#######################################################################################
  */
 
 
@@ -18,8 +18,8 @@
 typedef std::vector<std::vector<int>> chessboard;
 
 // Class that contains a chessboard and an int - will be used to store a board and the current row context
-class State {
-public:
+struct State {
+    State(chessboard board, const int &row) : board{std::move(board)}, row{row} {}
 
     // The current board configuration in this state
     chessboard board;
@@ -27,7 +27,6 @@ public:
     // The row context of the current state
     const int row;
 
-    State(chessboard board, const int &row) : board{std::move(board)}, row{row} {}
 };
 
 // Takes a dimension ( width = height ) and returns a n*n 2D vector with all values = 0, ( initial empty board )
@@ -42,22 +41,12 @@ chessboard setup_board(int &n)
     return chessboard (n, std::vector<int>(n, 0));
 }
 
-// This function takes a parent board, copies the parent into a child and
-// places a queen at the corresponding row, col in the child, then returns that child
-State place_queen(State &state, int col)
+// This function prints a chessboard
+void print_solution(const chessboard &board, int &count)
 {
-    chessboard childBoard = state.board;
-    childBoard[state.row+1][col] = 1;
-    return State(childBoard, state.row+1);
-}
-
-// This function updates the solution list containing the goal boards
-void update_solution(const chessboard &goalBoard, std::list<chessboard> &solutions, const int &n)
-{
-
     // If the N is less than 7 then print the solution
-    if (n < 7) {
-        for (const auto &row : goalBoard) {
+    if (board.size() < 7) {
+        for (const auto &row : board) {
             for (int square : row) {
                 std::cout << square << " ";
             }
@@ -66,15 +55,28 @@ void update_solution(const chessboard &goalBoard, std::list<chessboard> &solutio
         std::cout << std::endl;
     }
 
-    solutions.push_back(goalBoard);
+    // Increase the number of solutions
+    count++;
+}
+
+// This function takes a parent board, copies the parent into a child and
+// places a queen at the next row and given column in the child, then returns that child
+State place_queen(State &state, int col)
+{
+    chessboard childBoard = state.board;
+
+    childBoard[state.row+1][col] = 1;
+
+    return State(childBoard, state.row+1); // The new state's context is on the row below the parent
 }
 
 // This method will check if a placement is valid, if it is not we will stop exploring that path in the BFS
 bool isValid_placement(State &state, int col)
 {
-    int row = state.row + 1;
+    int row = state.row + 1; // We are checking the placement on row after the current state
+
     // Because each state will only ever have one queen on a row and we work from top down,
-    // we only need to check diagonals up and straight up
+    // we only need to check diagonals-up and straight up
 
     // Start at the potential placement and check all values above
     // start at the row above
@@ -84,8 +86,8 @@ bool isValid_placement(State &state, int col)
     }
 
     // Start at the potential placement and check all values above-diagonally-to-the-left
-    // formula is incrementing [row-1][col-1]
-    int r = row-1; int c = col-1; // start at the square up-to-left
+    // formula is repetitively accessing [row-1][col-1] until we hit a wall/ceiling
+    int r = row-1; int c = col-1; // start at the square up-and-to-the-left
     while (r >= 0 && c >= 0) {
         if (state.board[r][c])
             return false;
@@ -94,13 +96,13 @@ bool isValid_placement(State &state, int col)
     }
 
     // Start at the potential placement and check all values above-diagonally-to-the-right
-    // formula is incrementing [row-1][col+1]
-    r = row-1; c = col+1; // start at the square up-to-right
+    // formula is repetitively accessing [row-1][col+1] until we hit a wall/ceiling
+    r = row-1; c = col+1; // start at the square up-and-to-the--right
     while (r >= 0 && c < state.board.size()) {
         if (state.board[r][c])
             return false;
         r--;
-        c--;
+        c++;
     }
 
     return true;
@@ -108,10 +110,10 @@ bool isValid_placement(State &state, int col)
 
 // This function runs the BFS on the chess boards and solves for N queens
 // Returns a list of solutions - using a List as it has O(1) insertion and non-linear access does not matter
-std::list<chessboard> solve_bfs(int &n)
+void solve_bfs(int &n)
 {
-    // List of solutions
-    std::list<chessboard> solutions;
+    // Count of solutions
+    int solutionCount= 0;
 
     // Initial empty board
     chessboard board = setup_board(n);
@@ -134,30 +136,46 @@ std::list<chessboard> solve_bfs(int &n)
             // Only explore the path if the placement is valid
             if (isValid_placement(currentState, col)) {
                 // place the valid child board with the current row context at parent row + 1
-                queue.push(place_queen(currentState, col));
+
+                State childState = place_queen(currentState, col);
+
+                // If the row = N, we are that the end of the board, meaning we placed N queens which are all in valid states
+                // else push it to the queue as we can explore further
+                if (childState.row == n-1)
+                    print_solution(childState.board, solutionCount);
+                else
+                    queue.push(place_queen(currentState, col));
             }
         }
 
-        // If row = N, we are that the end of the board, meaning we placed N queens which are all in valid states
-        // add it to the solutions, else discard it
-        if (currentState.row == n) {
-            solutions.push_back(currentState.board);
-        }
     }
+
+    // Print the number of solutions
+    std::cout << "\nNumber of Solutions for " << n << " Queens: " << solutionCount << std::endl;
+
 }
-
-
-
 
 
 int main() {
 
+    // N-Queens
     int n;
 
-    std::cout<< "Input N: "; std::cin >> n;
+    std::cout<< "How many Queens should I solve?: "; std::cin >> n;
     std::cout<< std::endl;
 
+    clock_t start_t, end_t;
+    double cpu_time_used;
+
+    start_t = clock();
+
+    // Solve for n Queens
     solve_bfs(n);
+
+    end_t = clock();
+    cpu_time_used = ((double) (end_t - start_t)) / CLOCKS_PER_SEC;
+
+    std::cout << "\nI have slept for " << cpu_time_used << " seconds."  << std::endl;
 
     return 0;
 }
