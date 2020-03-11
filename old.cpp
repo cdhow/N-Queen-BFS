@@ -1,5 +1,4 @@
 #include <iostream>
-#include <utility>
 #include <vector>
 #include <list>
 #include <queue>
@@ -17,19 +16,6 @@
 // 2D Vector
 typedef std::vector<std::vector<int>> chessboard;
 
-// Class that contains a chessboard and an int - will be used to store a board and the current row context
-class State {
-public:
-
-    // The current board configuration in this state
-    chessboard board;
-
-    // The row context of the current state
-    const int row;
-
-    State(chessboard board, const int &row) : board{std::move(board)}, row{row} {}
-};
-
 // Takes a dimension ( width = height ) and returns a n*n 2D vector with all values = 0, ( initial empty board )
 chessboard setup_board(int &n)
 {
@@ -44,11 +30,11 @@ chessboard setup_board(int &n)
 
 // This function takes a parent board, copies the parent into a child and
 // places a queen at the corresponding row, col in the child, then returns that child
-State place_queen(State &state, int col)
+chessboard place_queen(chessboard &parentBoard, int row, int col)
 {
-    chessboard childBoard = state.board;
-    childBoard[state.row+1][col] = 1;
-    return *new State(childBoard, state.row+1);
+    chessboard childBoard = parentBoard;
+    childBoard[row][col] = 1;
+    return childBoard;
 }
 
 // This function updates the solution list containing the goal boards
@@ -70,16 +56,15 @@ void update_solution(const chessboard &goalBoard, std::list<chessboard> &solutio
 }
 
 // This method will check if a placement is valid, if it is not we will stop exploring that path in the BFS
-bool isValid_placement(State &state, int col)
+bool isValid_placement(chessboard &board, int row, int col)
 {
-    int row = state.row + 1;
     // Because each state will only ever have one queen on a row and we work from top down,
     // we only need to check diagonals up and straight up
 
     // Start at the potential placement and check all values above
     // start at the row above
     for (int r = row; r <=0; r --) {
-        if (state.board[r][col])
+        if (board[r][col])
             return false;
     }
 
@@ -87,7 +72,7 @@ bool isValid_placement(State &state, int col)
     // formula is incrementing [row-1][col-1]
     int r = row-1; int c = col-1; // start at the square up-to-left
     while (r >= 0 && c >= 0) {
-        if (state.board[r][c])
+        if (board[r][c])
             return false;
         r--;
         c--;
@@ -96,8 +81,8 @@ bool isValid_placement(State &state, int col)
     // Start at the potential placement and check all values above-diagonally-to-the-right
     // formula is incrementing [row+1][col+1]
     r = row=+1; c = col+1; // start at the square up-to-right
-    while (r <= state.board.size() && c <= state.board.size()) {
-        if (state.board[r][c])
+    while (r <= board.size() && c <= board.size()) {
+        if (board[r][c])
             return false;
         r--;
         c--;
@@ -117,40 +102,34 @@ std::list<chessboard> solve_bfs(int &n)
     chessboard board = setup_board(n);
 
     // BFS queue
-    std::queue<State> queue;
+    std::queue<chessboard> queue;
 
     // Push the initial empty board state
-    queue.push(State(board,0)); // initially at row 0
+    queue.push(board); // initially at row 0
 
     // Run BFS
+    int row = 0;
     while (!queue.empty())
     {
-        // pop from the queue
-        State currentState = queue.front();
+        // pop from the queue and push boards with queen on each col in the current row
+        chessboard parentBoard = queue.front();
         queue.pop();
 
 
         for (int col=0; col<n; col++) {
             // Only explore the path if the placement is valid
-            if (isValid_placement(currentState, col)) {
-                // place the valid child board with the current row context at parent row + 1
-                queue.push(place_queen(currentState, col));
+            if (isValid_placement(parentBoard, row, col)) {
+                // place the valid child board
+                queue.push(place_queen(parentBoard, row, col));
             }
         }
 
         // If row = N, we are that the end of the board, meaning we placed N queens which are all in valid states
         // add it to the solutions, else discard it
-        if (currentState.row == n) {
-            solutions.push_back(currentState.board);
+        if (row == n) { // TODO : not sure where this belongs
+            solutions.push_back(parentBoard);
         }
+
+        row++;
     }
-}
-
-
-
-
-
-int main() {
-
-    return 0;
 }
