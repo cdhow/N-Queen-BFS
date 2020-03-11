@@ -48,7 +48,7 @@ State place_queen(State &state, int col)
 {
     chessboard childBoard = state.board;
     childBoard[state.row+1][col] = 1;
-    return *new State(childBoard, state.row+1);
+    return State(childBoard, state.row+1);
 }
 
 // This function updates the solution list containing the goal boards
@@ -78,7 +78,7 @@ bool isValid_placement(State &state, int col)
 
     // Start at the potential placement and check all values above
     // start at the row above
-    for (int r = row; r <=0; r --) {
+    for (int r = row; r >= 0; r --) {
         if (state.board[r][col])
             return false;
     }
@@ -94,9 +94,9 @@ bool isValid_placement(State &state, int col)
     }
 
     // Start at the potential placement and check all values above-diagonally-to-the-right
-    // formula is incrementing [row+1][col+1]
-    r = row=+1; c = col+1; // start at the square up-to-right
-    while (r <= state.board.size() && c <= state.board.size()) {
+    // formula is incrementing [row-1][col+1]
+    r = row-1; c = col+1; // start at the square up-to-right
+    while (r >= 0 && c < state.board.size()) {
         if (state.board[r][c])
             return false;
         r--;
@@ -120,7 +120,7 @@ std::list<chessboard> solve_bfs(int &n)
     std::queue<State> queue;
 
     // Push the initial empty board state
-    queue.push(State(board,0)); // initially at row 0
+    queue.push(State(board,-1)); // initially at row 0
 
     // Run BFS
     while (!queue.empty())
@@ -151,6 +151,13 @@ std::list<chessboard> solve_bfs(int &n)
 
 
 int main() {
+
+    int n;
+
+    std::cout<< "Input N: "; std::cin >> n;
+    std::cout<< std::endl;
+
+    solve_bfs(n);
 
     return 0;
 }
