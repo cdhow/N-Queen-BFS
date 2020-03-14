@@ -1,10 +1,4 @@
-//
-// Created by caleb on 12/3/20.
-//
-
-
 #include "NQueens.h"
-
 
 std::vector<int> NQueens::createBoard()
 {
