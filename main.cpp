@@ -1,181 +1,204 @@
 #include <iostream>
-#include <utility>
-#include <vector>
-#include <list>
-#include <queue>
+#include "BFS/BFS_NQueens.h"
+#include "SA_HC/NQueens.h"
 
 /*
  * #######################################################################################
  *                                 N-Queens Problem
- * This program uses a breadth first search implementation to solve the N-Queens problem
+ * This program can use the following algorithms to solve the N-Queens problem:
+ * - a breadth first search implementation to find ALL solutions
+ * - a Hill Climbing implementation to find a SINGLE solution
+ * - a Simulated Annealing algorithm to find a SINGLE solution
  *
  * Created by ~ Caleb Howard
  *#######################################################################################
  */
 
-
-// 2D Vector
-typedef std::vector<std::vector<int>> chessboard;
-
-// Class that contains a chessboard and an int - will be used to store a board and the current row context
-struct State {
-    State(chessboard board, const int &row) : board{std::move(board)}, row{row} {}
-
-    // The current board configuration in this state
-    chessboard board;
-
-    // The row context of the current state
-    const int row;
-
-};
-
-// Takes a dimension ( width = height ) and returns a n*n 2D vector with all values = 0, ( initial empty board )
-chessboard setup_board(int &n)
-{
-    // Problem will not work for N < 1
-    if (n < 1) {
-        std::cout << "The N-Queens Problem will not work for N values less than 1.\nDefaulting to N=8.\n" << std::endl;
-        n = 8;
-    }
-
-    return chessboard (n, std::vector<int>(n, 0));
-}
-
-// This function prints a chessboard
-void print_solution(const chessboard &board, int &count)
-{
-    // If the N is less than 7 then print the solution
-    if (board.size() < 7) {
-        for (const auto &row : board) {
-            for (int square : row) {
-                std::cout << square << " ";
-            }
-            std::cout << "\n";
-        }
-        std::cout << std::endl;
-    }
-
-    // Increase the number of solutions
-    count++;
-}
-
-// This function takes a parent board, copies the parent into a child and
-// places a queen at the next row and given column in the child, then returns that child
-State place_queen(State &state, int col)
-{
-    chessboard childBoard = state.board;
-
-    childBoard[state.row+1][col] = 1;
-
-    return State(childBoard, state.row+1); // The new state's context is on the row below the parent
-}
-
-// This method will check if a placement is valid, if it is not we will stop exploring that path in the BFS
-bool isValid_placement(State &state, int col)
-{
-    int row = state.row + 1; // We are checking the placement on row after the current state
-
-    // Because each state will only ever have one queen on a row and we work from top down,
-    // we only need to check diagonals-up and straight up
-
-    // Start at the potential placement and check all values above
-    // start at the row above
-    for (int r = row; r >= 0; r --) {
-        if (state.board[r][col])
-            return false;
-    }
-
-    // Start at the potential placement and check all values above-diagonally-to-the-left
-    // formula is repetitively accessing [row-1][col-1] until we hit a wall/ceiling
-    int r = row-1; int c = col-1; // start at the square up-and-to-the-left
-    while (r >= 0 && c >= 0) {
-        if (state.board[r][c])
-            return false;
-        r--;
-        c--;
-    }
-
-    // Start at the potential placement and check all values above-diagonally-to-the-right
-    // formula is repetitively accessing [row-1][col+1] until we hit a wall/ceiling
-    r = row-1; c = col+1; // start at the square up-and-to-the--right
-    while (r >= 0 && c < state.board.size()) {
-        if (state.board[r][c])
-            return false;
-        r--;
-        c++;
-    }
-
-    return true;
-}
-
-// This function runs the BFS on the chess boards and solves for N queens
-// Returns a list of solutions - using a List as it has O(1) insertion and non-linear access does not matter
-void solve_bfs(int &n)
-{
-    // Count of solutions
-    int solutionCount= 0;
-
-    // Initial empty board
-    chessboard board = setup_board(n);
-
-    // BFS queue
-    std::queue<State> queue;
-
-    // Push the initial empty board state
-    queue.push(State(board,-1)); // initially at row 0
-
-    // Run BFS
-    while (!queue.empty())
-    {
-        // pop from the queue
-        State currentState = queue.front();
-        queue.pop();
-
-
-        for (int col=0; col<n; col++) {
-            // Only explore the path if the placement is valid
-            if (isValid_placement(currentState, col)) {
-                // place the valid child board with the current row context at parent row + 1
-
-                State childState = place_queen(currentState, col);
-
-                // If the row = N, we are that the end of the board, meaning we placed N queens which are all in valid states
-                // else push it to the queue as we can explore further
-                if (childState.row == n-1)
-                    print_solution(childState.board, solutionCount);
-                else
-                    queue.push(place_queen(currentState, col));
-            }
-        }
-
-    }
-
-    // Print the number of solutions
-    std::cout << "\nNumber of Solutions for " << n << " Queens: " << solutionCount << std::endl;
-
-}
-
-
-int main() {
-
-    // N-Queens
-    int n;
-
-    std::cout<< "How many Queens should I solve?: "; std::cin >> n;
-    std::cout<< std::endl;
+// Takes an option and the N value and runs an algorithm based on the option
+void run(const uint32_t &opt, int &n) {
 
     clock_t start_t, end_t;
     double cpu_time_used;
 
-    start_t = clock();
+    switch (opt) {
+        case 1:
+            start_t = clock(); // track time
+            solve_bfs(n);
+            end_t = clock();
+            break;
+        case 2:
+            start_t = clock(); // track time
+            NQueens().solve_hill_climbing(n);
+            end_t = clock();
+            break;
+        case 3:
+            start_t = clock(); // track time
+            NQueens().solve_simulated_annealing(n, 4000, 0.99);
+            end_t = clock();
+            break;
+        default: std::cout << opt << " is not a valid option, please try again.\n" << std::endl;
+    }
 
-    // Solve for n Queens
-    solve_bfs(n);
-
-    end_t = clock();
     cpu_time_used = ((double) (end_t - start_t)) / CLOCKS_PER_SEC;
 
-    std::cout << "\nI have slept for " << cpu_time_used << " seconds."  << std::endl;
+    std::cout << "\nAlgorithm run time: " << cpu_time_used << " seconds.\n"  << std::endl;
+}
+
+int main() {
+
+    std::cout<< "Welcome to the N-Queens Solver ~ Created by Caleb Howard.\n" << std::endl;
+
+    // Program loop
+    int opt = 0;
+    while (true)
+    {
+        // N-Queens
+        int n;
+
+        // Choose Algorithm
+        std::cout << "Choose from the following algorithms:\n1. BFS (all solutions).\n2. Hill Climbing (single solution).\n"
+                     "3. Simulated Annealing (single solution).\n4. Exit program." << std::endl;
+        std::cin >> opt;
+
+        if (opt == 4) {
+            std::cout<< "\nBye!";
+            break;
+        }
+
+        // Choose the number of Queens
+        std::cout<< "\nHow many Queens should be solved?: "; std::cin >> n;
+        std::cout << std::endl;
+
+        // run algorithm
+        run(opt, n);
+
+    }
+
+
 
     return 0;
 }
+
+
+//#include <iostream>
+//#include <random>
+//#include <vector>
+//#include <algorithm>
+//#define TEMPERATURE 4000
+//
+//void print_chessboard(std::vector<int> chess_board) { // print the chessboard
+//    for (int queen = 0; queen < chess_board.size(); queen++) {
+//        for (int row = 0; row < chess_board.size(); row++) {
+//            if (chess_board[queen] == row)
+//                std::cout << "1 ";
+//            else
+//                std::cout << "0 ";
+//        }
+//        std::cout << "\n";
+//    }
+//    std::cout << std::endl;
+//}
+//
+//int threat_calculate(int n) { // combination formula for calculate number of pairs of threaten queens
+//    if (n < 2) return 0;
+//    if (n == 2) return 1;
+//    return (n - 1) * n / 2;
+//}
+//
+//int cost(std::vector<int> chess_board) { // cost function to count total of pairs of threaten queens
+//    unsigned long size = chess_board.size();
+//    int threat = 0;
+//    int m_chessboard[size];
+//    int a_chessboard[size];
+//
+//    for (int i = 0; i < size; i++) {
+//        a_chessboard[i] = i + chess_board[i];
+//        m_chessboard[i] = i - chess_board[i];
+//    }
+//
+//    std::sort(m_chessboard, m_chessboard + size);
+//    std::sort(a_chessboard, a_chessboard + size);
+//
+//    int m_count = 1;
+//    int a_count = 1;
+//
+//    for (int i = 0; i < size - 1; i++) {
+//        int j = i + 1;
+//        if (m_chessboard[i] == m_chessboard[j]) m_count += 1;
+//        else {
+//            threat += threat_calculate(m_count);
+//            m_count = 1;
+//        }
+//        if (a_chessboard[i] == a_chessboard[j]) a_count += 1;
+//        else {
+//            threat += threat_calculate(a_count);
+//            a_count = 1;
+//        }
+//        if (j == size - 1) {
+//            threat += threat_calculate(m_count);
+//            threat += threat_calculate(a_count);
+//            break;
+//        }
+//    }
+//
+//    return threat;
+//}
+//
+//int main() {
+//    clock_t start = clock();
+//    srand((unsigned int) time(nullptr));
+//    std::random_device rd;
+//    std::mt19937 g(rd());
+//
+//    std::vector<int> answer;
+//    unsigned int n_queens; // number of queens
+//
+//    std::cout << "Number of queens: ";
+//    std::cin >> n_queens;
+//
+//    // create a chess board
+//    answer.reserve(n_queens);
+//    for (int i = 0; i < n_queens; i++) { // create a vector from 0 to N_QUEENS - 1
+//        answer.emplace_back(i);
+//    }
+//    std::shuffle(answer.begin(), answer.end(), g); //shuffle chess board to make sure it is random
+//    int cost_answer = cost(answer); // To avoid recounting in case can not find a better state
+//
+//    // simulated annealing
+//    std::vector<int> successor;
+//    successor.reserve(n_queens);
+//    double t = TEMPERATURE;
+//    double sch = 0.99;
+//    while (t > 0) {
+//        int rand_col_1;
+//        int rand_col_2;
+//        t *= sch;
+//        successor = answer;
+//        while (true) { // random 2 queens
+//            rand_col_1 = (int) random() % n_queens;
+//            rand_col_2 = (int) random() % n_queens;
+//            if (successor[rand_col_1] != successor[rand_col_2]) break;
+//        }
+//        std::swap(successor[rand_col_1], successor[rand_col_2]); // swap two queens chosen
+//        double delta = cost(successor) - cost_answer;
+//        if (delta < 0) {
+//            answer = successor;
+//            cost_answer = cost(answer);
+//        } else {
+//            double p = exp(-delta / t);
+//            if (random() / double(RAND_MAX) < p) {
+//                answer = successor;
+//                cost_answer = cost(answer);
+//            }
+//        }
+//        if (cost_answer == 0) {
+//            print_chessboard(answer);
+//            break;
+//        }
+//    }
+//
+//    clock_t stop = clock();
+//    std::cout << "Runtime: " << (float) (stop - start) / 1000000 << " seconds" << std::endl;
+//
+//    return 0;
+//}
