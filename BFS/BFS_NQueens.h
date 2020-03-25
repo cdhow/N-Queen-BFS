@@ -11,4 +11,7 @@
 
 void solve_bfs(int&);
 
+//void solve_bfs_before_enhancement(int&);
+
+
 #endif //IA_BFS_NQUEENS_H

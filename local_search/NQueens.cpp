@@ -65,7 +65,15 @@ void NQueens::printBoard(std::vector<int> &chessboard)
         }
         std::cout << "\n";
     }
-    std::cout << std::endl;
+}
+
+bool NQueens::is_valid_N_value()
+{
+    if (this->n_queens < 1 || this->n_queens == 2 || this->n_queens == 3) {
+        std::cout << this->n_queens << " Queens has no solution." << std::endl;
+        return false;
+    }
+    return true;
 }
 
 void NQueens::solve_simulated_annealing(const int &n, double t, const double &cooling_factor)
@@ -74,13 +82,20 @@ void NQueens::solve_simulated_annealing(const int &n, double t, const double &co
 
     this->n_queens = n;
 
+    // If the board has no solutions do not run the algorithm
+    if (!is_valid_N_value())
+        return;
+
+    if (n_queens == 1)
+        return;
+
     // Initial board
     std::vector<int> best_board(createBoard());
 
     // Initial cost
     int cost_best = cost(best_board);
 
-    // simulated annealing
+    // Simulated annealing
     std::vector<int> successor;
     successor.reserve(n_queens);
 
@@ -110,6 +125,8 @@ void NQueens::solve_simulated_annealing(const int &n, double t, const double &co
 
         // Best board found - print
         if (cost_best == 0) {
+            std::cout << "Solution for " << this->n_queens <<
+            " Queens using the Simulated Annealing algorithm." << std::endl;
             printBoard(best_board);
             break;
         }
@@ -121,11 +138,20 @@ void NQueens::solve_hill_climbing(const int &n)
     // Set n_queens
     this->n_queens = n;
 
+    // If the board has no solutions do not run the algorithm
+    if (!is_valid_N_value())
+        return;
+
     std::vector<int> best_board(createBoard());
     int best_cost = cost(best_board);
 
     std::vector<int> successor;
     successor.reserve(n_queens);
+
+    // We will restart the board if we have the same cost for 10 swaps
+    int count = 0;
+
+    // Log time;
 
     // Run until the best cost (heuristic) = 0
     while (best_cost)
@@ -134,18 +160,32 @@ void NQueens::solve_hill_climbing(const int &n)
 
         // Swap the the column positions of two random random queens
         random_swap(successor);
+        int successor_cost = cost(successor);
+
+        // Count have many times the successor cost is the same as the best cost
+        if (best_cost == successor_cost)
+            count++;
 
         // If the successor has a better cost, update the best_board and it's cost
-        if (cost(successor) < best_cost) {
+        if ( successor_cost< best_cost) {
             best_board = successor;
-            best_cost = cost(best_board);
+            best_cost = successor_cost;
         }
 
         // If the cost is 0 we have found a solution
         if (best_cost == 0) {
+            std::cout << "Solution for " << this->n_queens <<
+                      " Queens using the Hill Climbing algorithm." << std::endl;
             // Print board
             printBoard(best_board);
             break;
+        }
+
+        // stuck on the same cost 10 times, restart board
+        if (count == 10) {
+            best_board = createBoard();
+            best_cost = cost(best_board);
+            count = 0;
         }
 
     }

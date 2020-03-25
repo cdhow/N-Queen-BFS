@@ -99,7 +99,6 @@ bool isValid_placement(State &state, int col)
 }
 
 // This function runs the BFS on the chess boards and solves for N queens
-// Returns a list of solutions - using a List as it has O(1) insertion and non-linear access does not matter
 void solve_bfs(int &n)
 {
     // Count of solutions
@@ -112,7 +111,7 @@ void solve_bfs(int &n)
     std::queue<State> queue;
 
     // Push the initial empty board state
-    queue.push(State(board,-1)); // initially at row 0
+    queue.push(State(board,-1)); // initially not on the board (no queens placed)
 
     // Run BFS
     while (!queue.empty())
@@ -143,3 +142,67 @@ void solve_bfs(int &n)
 
 }
 
+/* ######################################################################################################
+ * The below code is what was used before the enhancement was added (none of this code is currently used)
+ */
+
+//// This function checks if a board (state) is a solution
+//bool is_solution(const chessboard& board)
+//{
+//    int n = board.size();
+//    // Start on the last row, find queen on row, call is_valid for all rows above except row==0
+//    for (int row=n-1; row>0; row--) {
+//        // Find the queen on the current row
+//        for (int col=0; col<n; col++) {
+//            if (board[row][col] == 1) {
+//                State s(board, row-1);
+//                // Check if that queen is a valid placement on that board
+//                if(!isValid_placement(s, col))
+//                    return false;
+//                break;
+//            }
+//        }
+//    }
+//    return true;
+//}
+//
+//// This function runs the BFS on the chess boards and solves for N queens
+//// This function is deprecated in favour of the enhanced function "solve_bfs()"
+//void solve_bfs_before_enhancement(int &n)
+//{
+//    // Count of solutions
+//    int solutionCount= 0;
+//
+//    // Initial empty board
+//    chessboard board = setup_board(n);
+//
+//    // BFS queue
+//    std::queue<State> queue;
+//
+//    // Push the initial empty board state
+//    queue.push(State(board,-1)); // initially not on the board (no queens placed)
+//
+//    // Run BFS
+//    while (!queue.empty()) {
+//        // pop from the queue
+//        State currentState = queue.front();
+//        queue.pop();
+//
+//        for (int col = 0; col < n; col++) {
+//            // place the valid child board with the current row context at parent row + 1
+//
+//            State childState = place_queen(currentState, col);
+//
+//            // If the row = N, we are that the end of the board, meaning we placed N queens, check if the board is a solution
+//            // else push it to the queue as we can explore further
+//            if (childState.row == n - 1 && is_solution(childState.board))
+//                print_solution(childState.board, solutionCount);
+//            else
+//                queue.push(place_queen(currentState, col));
+//        }
+//    }
+//
+//    // Print the number of solutions
+//    std::cout << "Number of Solutions for " << n << " Queens: " << solutionCount << std::endl;
+//
+//}

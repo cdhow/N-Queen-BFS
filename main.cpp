@@ -1,6 +1,7 @@
 #include <iostream>
+#include <chrono>
 #include "BFS/BFS_NQueens.h"
-#include "SA_HC/NQueens.h"
+#include "local_search/NQueens.h"
 
 /*
  * #######################################################################################
@@ -14,34 +15,35 @@
  *#######################################################################################
  */
 
-// Takes an option and the N value and runs an algorithm based on the option
-void run(const uint32_t &opt, int &n) {
+// Takes an option and the N value and runs an algorithm based on the option, returns the algorithm run time
+double run(const uint32_t &opt, int &n) {
 
-    clock_t start_t, end_t;
-    double cpu_time_used;
+    // Track time
+    auto startClock = std::chrono::high_resolution_clock::now();
 
     switch (opt) {
         case 1:
-            start_t = clock(); // track time
             solve_bfs(n);
-            end_t = clock();
             break;
         case 2:
-            start_t = clock(); // track time
             NQueens().solve_hill_climbing(n);
-            end_t = clock();
             break;
         case 3:
-            start_t = clock(); // track time
             NQueens().solve_simulated_annealing(n, 4000, 0.99);
-            end_t = clock();
             break;
-        default: std::cout << opt << " is not a valid option, please try again.\n" << std::endl;
+        default:
+            std::cout << opt << " is not a valid option, please try again.\n" << std::endl;
+            return 0;
     }
 
-    cpu_time_used = ((double) (end_t - start_t)) / CLOCKS_PER_SEC;
+    auto endClock = std::chrono::high_resolution_clock::now();
+    double microseconds =
+            std::chrono::duration_cast<std::chrono::microseconds>
+                    (endClock - startClock).count();
 
-    std::cout << "\nAlgorithm run time: " << cpu_time_used << " seconds.\n"  << std::endl;
+    std::cout << "Algorithm run time: " << double(microseconds) / 1000000<< " seconds.\n"  << std::endl;
+
+    return microseconds;
 }
 
 int main() {
@@ -55,6 +57,9 @@ int main() {
         // N-Queens
         int n;
 
+        // Range of N-Queens to run algorithm against
+        int n_min; int n_max;
+
         // Choose Algorithm
         std::cout << "Choose from the following algorithms:\n1. BFS (all solutions).\n2. Hill Climbing (single solution).\n"
                      "3. Simulated Annealing (single solution).\n4. Exit program." << std::endl;
@@ -65,16 +70,39 @@ int main() {
             break;
         }
 
-        // Choose the number of Queens
-        std::cout<< "\nHow many Queens should be solved?: "; std::cin >> n;
-        std::cout << std::endl;
+        // Option to run for a range of N values
+        std::cout << "Run Algorithm for a range of N values? (y/n)" << std::endl;
+        char run_range; std::cin >> run_range;
 
-        // run algorithm
-        run(opt, n);
+        if (run_range == 'y' || run_range == 'Y')
+        {
+            std::cout<< "\nInput the N range lower bound: "; std::cin >> n_min;
+            std::cout<< "\nInput the N range upper bound: "; std::cin >> n_max;
+
+            // Run the algorithm for N = n_min to N = n_max
+            double net_runtime = 0;
+            for (int nval = n_min; nval<=n_max; nval++)
+                net_runtime += run(opt, nval);
+
+            // Print the net runtime of solutions N=n_min to N=n_max
+            std::cout << "Combined runtime for range: ["<<n_min<<".."<<n_max<<"]: "
+            << net_runtime/ 1000000 << " seconds\n" << std::endl;
+
+        } else if (run_range == 'n' || run_range == 'N')
+        {
+            // Choose the number of Queens
+            std::cout<< "\nHow many Queens should be solved?: "; std::cin >> n;
+            std::cout << std::endl;
+
+            // run algorithm
+            run(opt, n);
+        }
+        else
+        {
+            std::cout << "Error: invalid choice.\n" << std::endl;
+        }
 
     }
-
-
 
     return 0;
 }

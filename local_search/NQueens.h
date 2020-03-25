@@ -26,6 +26,9 @@ class NQueens {
     // This method swaps the column positions of two queens
     void random_swap(std::vector<int> &);
 
+    // Simple method to determine whether to run the algorithm (No solutions for N < 1, N=2 and N=3)
+    bool is_valid_N_value();
+
 
 public:
 
@@ -34,6 +37,7 @@ public:
     // While cost != 0
     //      swap the two column positions of two random queens
     //      if the successor cost is less than the best cost then update the best board and best cost
+    //      if the successor cost == the best cost for 10 runs, restart the board
     //      if the best cost == 0 then print board and return
     void solve_hill_climbing(const int &);
 
